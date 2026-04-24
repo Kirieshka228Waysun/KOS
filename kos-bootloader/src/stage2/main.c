@@ -16,7 +16,7 @@
 #include "printf.h"
 #include "string.h"
 #include "normal_boot.h"
-#include "console.h"
+#include "recovery/console.h"
 #include "memtest_stub.h"
 
 /* ============================================================================
@@ -57,10 +57,7 @@ static void boot_menu(void);
 static boot_mode_t wait_for_selection(void);
 static void execute_boot_mode(boot_mode_t mode);
 
-/* ============================================================================
- * GDT Structure (Flat Memory Model)
- * ============================================================================
- */
+/* GDT Structure (Flat Memory Model) */
 #define GDT_ENTRIES 4
 
 struct gdt_entry {
@@ -107,15 +104,11 @@ void _start(void) {
     boot_menu();
 }
 
-/* ============================================================================
- * Bootstrap: Setup GDT, enable A20, switch to protected mode
- * ============================================================================
- */
 static void bootstrap(void) {
     /* Setup Global Descriptor Table */
     gdt_setup();
     
-    /* Load GDT - copy to local variable first to avoid unaligned pointer cast */
+    /* Load GDT - use intermediate variable to avoid unaligned pointer warning */
     gdtp.limit = sizeof(gdt) - 1;
     gdtp.base = (uint32_t)(uintptr_t)gdt;
     load_gdt((uint32_t*)(uintptr_t)&gdtp);
@@ -227,7 +220,6 @@ static void boot_menu(void) {
     const char* normal_entry = "[G] Normal Boot - Load /boot/boot32.sys";
     const char* recovery_entry = "[R] Recovery Console";
     const char* memtest_entry = "[M] Memory Test";
-    const char* timeout_info = "Auto-boot in 10 seconds...";
     
     /* Print title */
     vga_print_string_centered(BOOT_TITLE_Y, title, COLOR_WHITE, COLOR_BLUE);
@@ -239,10 +231,6 @@ static void boot_menu(void) {
                      COLOR_WHITE, COLOR_BLACK);
     vga_print_string(BOOT_MENU_Y + 4, BOOT_MENU_X, memtest_entry,
                      COLOR_WHITE, COLOR_BLACK);
-    
-    /* Print timeout info */
-    vga_print_string(BOOT_MENU_Y + 7, BOOT_MENU_X, timeout_info,
-                     COLOR_LIGHT_GRAY, COLOR_BLACK);
     
     /* Highlight default selection */
     vga_print_string(BOOT_MENU_Y, BOOT_MENU_X - 3, ">>", 
@@ -334,7 +322,7 @@ static void execute_boot_mode(boot_mode_t mode) {
  * This code is embedded in the binary and called during bootstrap
  * ============================================================================
  */
-asm(
+__asm__(
     ".section .stub\n\t"
     ".globl load_gdt\n\t"
     ".globl switch_to_protected\n\t"

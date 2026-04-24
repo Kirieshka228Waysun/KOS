@@ -43,7 +43,7 @@ typedef uint32_t            virt_addr_t;
 /* Volatile qualifier for memory-mapped I/O */
 #define volatile_register   volatile
 
-/* Memory barriers - use __asm__ directly to avoid macro issues */
+/* Memory barriers */
 #define memory_barrier()    __asm__ volatile("" ::: "memory")
 #define read_barrier()      __asm__ volatile("" ::: "memory")
 #define write_barrier()     __asm__ volatile("" : : : "memory")

@@ -274,7 +274,7 @@ static void cmd_info(const char* args) {
     
     iso_mount_t* mount = iso_get_mount_info();
     
-    vga_puts("System Information:\r\n");
+    vga_print_string(0, 0, "System Information:", COLOR_WHITE, COLOR_BLACK);
     vga_printf(vga_get_cursor_row(), 5, COLOR_WHITE, COLOR_BLACK,
               "Memory: 0x000A0000-0x000FFFFF [ROM]");
     vga_printf(vga_get_cursor_row() + 1, 5, COLOR_WHITE, COLOR_BLACK,
@@ -395,9 +395,12 @@ static void cmd_reboot(const char* args) {
     outb(0x64, 0xFE);  /* Keyboard controller reset */
     
     /* If that doesn't work, triple fault */
-    asm volatile(
-        "lidt word ptr [0]\n\t"
+    __asm__ volatile(
+        "lidt %0\n\t"
         "int3\n\t"
+        :
+        : "m"(*(uint8_t*)0)
+        : "memory"
     );
     
     /* Should never reach here */

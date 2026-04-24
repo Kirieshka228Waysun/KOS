@@ -70,7 +70,8 @@ STAGE2_SRCS_C   := $(wildcard $(STAGE2_DIR)/*.c) \
                    $(wildcard $(STAGE2_DIR)/lib/*.c) \
                    $(wildcard $(STAGE2_DIR)/iso9660/*.c) \
                    $(wildcard $(STAGE2_DIR)/boot_modes/*.c) \
-                   $(wildcard $(STAGE2_DIR)/boot_modes/recovery/*.c)
+                   $(wildcard $(STAGE2_DIR)/boot_modes/recovery/*.c) \
+                   $(wildcard $(STAGE2_DIR)/boot_modes/memtest/*.c)
 
 STAGE2_OBJS     := $(patsubst $(STAGE2_DIR)/%.c,$(BUILD_DIR)/%.o,$(STAGE2_SRCS_C))
 
