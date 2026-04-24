@@ -22,6 +22,7 @@ static uint16_t serial_base = SERIAL_COM1_BASE;
  * ============================================================================
  */
 
+#if 0  /* Disabled: not used in current implementation */
 /**
  * @brief Check if UART chip exists at given port
  */
@@ -37,6 +38,7 @@ static bool serial_check_uart(void) {
     /* If bits 4-6 are preserved, UART exists */
     return (test & 0x70) == 0x40;
 }
+#endif
 
 /* ============================================================================
  * Public API Implementation
