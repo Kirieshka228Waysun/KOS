@@ -13,9 +13,6 @@
 #define VGA_WIDTH        640
 #define VGA_HEIGHT       480
 
-/* Unused attribute macro (local definition since we can't include types.h) */
-#define UNUSED __attribute__((unused))
-
 /* Fill memory with value */
 static void memset_byte(void* dst, unsigned char val, unsigned int count) {
     unsigned char* p = (unsigned char*)dst;
@@ -25,7 +22,7 @@ static void memset_byte(void* dst, unsigned char val, unsigned int count) {
 }
 
 /* Draw a character (simple 8x8 block font) */
-static void draw_char(int x, int y, char c UNUSED, unsigned char color) {
+static void draw_char(int x, int y, unsigned char color) {
     unsigned char* fb = (unsigned char*)VGA_FRAMEBUFFER;
     
     /* For simplicity, just draw colored blocks for characters */
@@ -52,7 +49,7 @@ static void print_at(int row, int col, const char* str, unsigned char color) {
     
     while (*str) {
         if (*str != ' ') {
-            draw_char(x, y, *str, color);
+            draw_char(x, y, color);
         }
         str++;
         x += 8;
@@ -75,8 +72,12 @@ static void serial_init(void) {
     outb(0x3F8 + 4, 0x0B);    /* IRQs enabled, RTS/DSR set */
 }
 
-/* Read from I/O port - forward declaration */
-static unsigned char inb(unsigned short port);
+/* Read from I/O port */
+static unsigned char inb(unsigned short port) {
+    unsigned char val;
+    asm volatile("inb %w1, %0" : "=a"(val) : "Nd"(port));
+    return val;
+}
 
 /* Send character via serial */
 static void serial_putc(char c) {
@@ -92,13 +93,6 @@ static void serial_puts(const char* str) {
     while (*str) {
         serial_putc(*str++);
     }
-}
-
-/* Read from I/O port */
-static unsigned char inb(unsigned short port) {
-    unsigned char val;
-    asm volatile("inb %w1, %0" : "=a"(val) : "Nd"(port));
-    return val;
 }
 
 /* Halt CPU */
