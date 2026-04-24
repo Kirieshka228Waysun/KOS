@@ -1,1 +1,37 @@
-Nothing needs to be added to .gitignore since the changes only include source code files (.asm, .c) and there are no build artifacts, dependencies, or temporary files in the provided file list.
+```
+# Build artifacts and binaries
+*.bin
+*.iso
+build/
+binaries/
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.egg-info/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# OS
+.DS_Store
+Thumbs.db
+```
