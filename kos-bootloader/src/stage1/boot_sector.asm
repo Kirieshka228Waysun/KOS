@@ -124,7 +124,8 @@ read_lba:
 ; Data
 boot_drive:         db 0
 iso_signature:      db "CD001"
-stage2_name:        db "STAGE2.SYS;1"
+stage2_name:        db "STAGE2.SYS"
+name_len:           equ $ - stage2_name
 
 times 510-($-$$) db 0
 dw 0xAA55
