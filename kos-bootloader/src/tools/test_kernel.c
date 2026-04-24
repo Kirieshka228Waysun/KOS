@@ -6,27 +6,15 @@
  * ============================================================================
  */
 
+#include <stdint.h>
+
 /* VGA framebuffer for mode 0x12 */
 #define VGA_FRAMEBUFFER  0xA0000
 #define VGA_WIDTH        640
 #define VGA_HEIGHT       480
 
-/* Simple string copy */
-static void memcpy_str(char* dst, const char* src) {
-    while (*src) {
-        *dst++ = *src++;
-    }
-    *dst = '\0';
-}
-
-/* Get string length */
-static unsigned int strlen(const char* s) {
-    unsigned int len = 0;
-    while (*s++) {
-        len++;
-    }
-    return len;
-}
+/* Unused attribute macro (local definition since we can't include types.h) */
+#define UNUSED __attribute__((unused))
 
 /* Fill memory with value */
 static void memset_byte(void* dst, unsigned char val, unsigned int count) {
@@ -37,7 +25,7 @@ static void memset_byte(void* dst, unsigned char val, unsigned int count) {
 }
 
 /* Draw a character (simple 8x8 block font) */
-static void draw_char(int x, int y, char c, unsigned char color) {
+static void draw_char(int x, int y, char c UNUSED, unsigned char color) {
     unsigned char* fb = (unsigned char*)VGA_FRAMEBUFFER;
     
     /* For simplicity, just draw colored blocks for characters */
@@ -86,6 +74,9 @@ static void serial_init(void) {
     outb(0x3F8 + 2, 0xC7);    /* Enable FIFO */
     outb(0x3F8 + 4, 0x0B);    /* IRQs enabled, RTS/DSR set */
 }
+
+/* Read from I/O port - forward declaration */
+static unsigned char inb(unsigned short port);
 
 /* Send character via serial */
 static void serial_putc(char c) {
