@@ -1,12 +1,1 @@
-```
-# Build artifacts and binaries
-kos-bootloader/binaries/
-kos-bootloader/build/
-
-# OS specific
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-```
+Nothing needs to be added to .gitignore since the changes only include source code files (.asm, .c) and there are no build artifacts, dependencies, or temporary files in the provided file list.

@@ -139,5 +139,6 @@ found_msg:      db "Found: 0x", 0
 drive_msg:      db 13, 10, "Drive: 0x80 (First Hard Disk)", 13, 10, 0
 newline:        db 13, 10, 0
 
-; Pad to reasonable size  
-times 256-($-$$) db 0
+; No padding needed - COM files can be any size < 64KB
+; The program will return via INT 0x20 before reaching here
+end_marker:

@@ -86,11 +86,11 @@ draw_color_boxes:
     mov     ah, 0x09          ; Write attribute/character
     mov     al, 0xDB          ; Solid block character
     mov     bh, 0x00
-    mov     bl, bx            ; Color attribute
+    mov     bl, cl            ; Color attribute (use CL)
     mov     cx, 5             ; Repeat 5 times
     int     0x10
     
-    inc     bx
+    inc     cl
     inc     dh                ; Move to next column
     jmp     .draw_loop
     
