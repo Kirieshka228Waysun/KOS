@@ -18,90 +18,162 @@ start:
     mov     ds, ax
     mov     es, ax
     sti
-    
     mov     [boot_drive], dl
     
     ; Reset disk
     mov     dl, [boot_drive]
     mov     ah, 0x00
     int     0x13
-    jc      disk_error
+    jc      err
     
-    ; Read Volume Descriptor at LBA 16
+    ; Read Primary Volume Descriptor at LBA 16
     mov     eax, 16
     mov     bx, 0x7E00
     call    read_lba
-    jc      disk_error
+    jc      err
     
-    ; Verify ISO9660 signature "CD001"
+    ; Verify ISO9660 signature "CD001" at offset 1
     mov     si, 0x7E01
-    mov     di, iso_signature
+    mov     di, iso_sig
     mov     cx, 5
     repe cmpsb
-    jne     not_iso
+    jne     err
     
-    ; Read root directory at LBA 20
-    mov     eax, 20
-    mov     bx, 0x7C00
+    ; Get Root Directory Record from PVD (offset 156)
+    mov     esi, 0x7E00 + 156
+    mov     eax, [esi + 2]          ; Root dir LBA
+    mov     [root_lba], eax
+    
+    ; Load root directory (8 sectors)
+    mov     ebx, 0x7C00
+    mov     cl, 8
+.rloop:
+    push    eax
+    push    ebx
+    push    ecx
     call    read_lba
-    jc      disk_error
+    pop     ecx
+    pop     ebx
+    pop     eax
+    inc     eax
+    add     ebx, 512
+    dec     cl
+    jnz     .rloop
     
-    ; Search for STAGE2.SYS in root directory
+    ; Search for BOOT directory in root
     mov     di, 0x7C00
-.find_stage2:
-    mov     bl, [di]
-    test    bl, bl
-    jz      stage2_not_found
+.fboot:
+    test    byte [di], 0
+    jz      err
+    mov     cl, [di + 32]
+    test    cl, cl
+    jz      err
     
-    ; Compare filename at offset 33
-    mov     si, stage2_name
-    mov     cx, 12
-.check_name:
+    ; Check for "BOOT" (4 chars)
+    mov     si, boot_name
+    mov     cx, 4
+.cboot:
     lodsb
     mov     ah, [di + 33]
-    inc     di
-    ; Uppercase compare
-    cmp     al, 'a'
-    jb      .skip_upper_al
-    cmp     al, 'z'
-    ja      .skip_upper_al
-    sub     al, 20h
-.skip_upper_al:
-    cmp     ah, 'a'
-    jb      .skip_upper_ah
-    cmp     ah, 'z'
-    ja      .skip_upper_ah
-    sub     ah, 20h
-.skip_upper_ah:
+    call    toupper
+    xchg    al, ah
+    call    toupper
     cmp     al, ah
-    jne     .next_record
-    loop    .check_name
+    jne     .nrec
+    inc     di
+    loop    .cboot
+    sub     di, 4
+    jmp     .fboot_ok
+.nrec:
+    sub     di, 3
+    mov     cl, [di + 35]
+    add     di, cx
+    cmp     di, 0x7C00 + 4096
+    jae     err
+    jmp     .fboot
     
-    ; Found! Get LBA from offset 2
-    sub     di, 12
+.fboot_ok:
+    ; Found BOOT dir - get LBA
     mov     eax, [di + 2]
-    mov     ebx, 0x7E00
+    mov     [boot_lba], eax
+    
+    ; Load BOOT directory to 0x7A00
+    mov     ebx, 0x7A00
+    mov     cl, 8
+.bloop:
+    push    eax
+    push    ebx
+    push    ecx
     call    read_lba
-    jc      disk_error
+    pop     ecx
+    pop     ebx
+    pop     eax
+    inc     eax
+    add     ebx, 512
+    dec     cl
+    jnz     .bloop
+    
+    ; Search for STAGE2.SYS in BOOT dir
+    mov     di, 0x7A00
+.fsys:
+    test    byte [di], 0
+    jz      err
+    mov     cl, [di + 32]
+    test    cl, cl
+    jz      err
+    
+    ; Compare "STAGE2.SYS" (12 chars)
+    mov     si, stage2_name
+    mov     cx, 12
+.cname:
+    lodsb
+    mov     ah, [di + 33]
+    call    toupper
+    xchg    al, ah
+    call    toupper
+    cmp     al, ah
+    jne     .nsys
+    inc     di
+    loop    .cname
+    sub     di, 12
+    jmp     .found
+    
+.nsys:
+    sub     di, 11
+    mov     cl, [di + 33]
+    add     di, cx
+    cmp     di, 0x7A00 + 4096
+    jae     err
+    jmp     .fsys
+    
+.found:
+    ; Load STAGE2.SYS to 0x7E00
+    mov     eax, [di + 2]           ; LBA
+    mov     ebx, 0x7E00
+    mov     cl, 8                   ; Sectors to load
+.lsys:
+    push    eax
+    push    ebx
+    push    ecx
+    call    read_lba
+    pop     ecx
+    pop     ebx
+    pop     eax
+    inc     eax
+    add     ebx, 512
+    dec     cl
+    jnz     .lsys
     
     jmp     0x0000:0x7E00
-    
-.next_record:
-    mov     cl, [di + 32]
-    add     di, cx
-    jmp     .find_stage2
 
-disk_error:
-not_iso:
-stage2_not_found:
+err:
     cli
     hlt
 
-; Read LBA sector
+; Read 1 sector: EAX=LBA, BX=buffer
 read_lba:
     pushad
     push    eax
-    ; Convert LBA to CHS
     xor     edx, edx
     mov     ecx, 32
     div     ecx
@@ -113,19 +185,29 @@ read_lba:
     mov     dh, dl
     mov     ch, al
     pop     eax
-    
     mov     ax, 0x0201
-    mov     bx, 0x7E00
     mov     dl, [boot_drive]
     int     0x13
     popad
     ret
 
+; Uppercase AL if lowercase
+toupper:
+    cmp     al, 'a'
+    jb      .ok
+    cmp     al, 'z'
+    ja      .ok
+    sub     al, 20h
+.ok:
+    ret
+
 ; Data
-boot_drive:         db 0
-iso_signature:      db "CD001"
-stage2_name:        db "STAGE2.SYS"
-name_len:           equ $ - stage2_name
+boot_drive:     db 0
+iso_sig:        db "CD001"
+boot_name:      db "BOOT"
+stage2_name:    db "STAGE2.SYS"
+root_lba:       dd 0
+boot_lba:       dd 0
 
 times 510-($-$$) db 0
 dw 0xAA55
