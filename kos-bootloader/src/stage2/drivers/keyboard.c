@@ -376,6 +376,13 @@ char scancode_to_ascii(uint8_t scancode, bool shift) {
     return scan_ascii_table[scan];
 }
 
+char keyboard_scan_to_char(uint8_t scan) {
+    if (scan >= 128) {
+        return 0;
+    }
+    return scan_ascii_table[scan];
+}
+
 uint8_t keyboard_get_modifiers(void) {
     uint8_t modifiers = 0;
     

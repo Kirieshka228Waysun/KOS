@@ -54,7 +54,9 @@ GCC_FLAGS       := -m32 \
                    -I$(STAGE2_DIR)/drivers \
                    -I$(STAGE2_DIR)/lib \
                    -I$(STAGE2_DIR)/iso9660 \
-                   -I$(STAGE2_DIR)/boot_modes
+                   -I$(STAGE2_DIR)/boot_modes \
+                   -I$(STAGE2_DIR)/boot_modes/recovery \
+                   -I$(STAGE2_DIR)/boot_modes/memtest
 
 # Linker flags
 LD_FLAGS        := -m elf_i386 \
@@ -114,6 +116,36 @@ $(STAGE1_BIN): $(STAGE1_SRCS) | $(BINARIES_DIR)
 
 # Build Stage 2 object files
 $(BUILD_DIR)/%.o: $(STAGE2_DIR)/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
+	@echo "[GCC]  Compiling $<"
+	$(GCC) $(GCC_FLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/drivers/%.o: $(STAGE2_DIR)/drivers/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
+	@echo "[GCC]  Compiling $<"
+	$(GCC) $(GCC_FLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/lib/%.o: $(STAGE2_DIR)/lib/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
+	@echo "[GCC]  Compiling $<"
+	$(GCC) $(GCC_FLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/iso9660/%.o: $(STAGE2_DIR)/iso9660/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
+	@echo "[GCC]  Compiling $<"
+	$(GCC) $(GCC_FLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/boot_modes/%.o: $(STAGE2_DIR)/boot_modes/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
+	@echo "[GCC]  Compiling $<"
+	$(GCC) $(GCC_FLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/boot_modes/recovery/%.o: $(STAGE2_DIR)/boot_modes/recovery/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
+	@echo "[GCC]  Compiling $<"
+	$(GCC) $(GCC_FLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/boot_modes/memtest/%.o: $(STAGE2_DIR)/boot_modes/memtest/%.c | $(BUILD_DIR)
 	@mkdir -p $(dir $@)
 	@echo "[GCC]  Compiling $<"
 	$(GCC) $(GCC_FLAGS) -c -o $@ $<
@@ -210,7 +242,7 @@ run_kernel: $(KERNEL_BIN)
 # Clean build artifacts
 clean:
 	@echo "[CLEAN] Removing build artifacts..."
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/*.elf $(BUILD_DIR)/iso_root
 	rm -rf $(BINARIES_DIR)
 	rm -f $(ISO_IMAGE)
 	@echo "[OK] Clean complete"

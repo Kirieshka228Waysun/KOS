@@ -155,7 +155,7 @@ static bool console_read_line(char* buffer, size_t max_len) {
                 default:
                     /* Regular character */
                     if (pos < max_len - 1 && scan < 128) {
-                        char c = scan_ascii_table[scan];
+                        char c = keyboard_scan_to_char(scan);
                         if (c != 0) {
                             buffer[pos++] = c;
                             buffer[pos] = '\0';

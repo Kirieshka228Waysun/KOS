@@ -21,10 +21,11 @@ static int cursor_row = 0;
 static int cursor_col = 0;
 
 /* ============================================================================
- * Font Data (8x16 VGA font, subset of ASCII characters)
+ * Font Data (8x16 VGA font, subset of ASCII characters) - currently unused
  * ============================================================================
  */
 
+#if 0
 static const uint8_t font_data[128][16] = {
     /* Space (0x20) - all zeros */
     [0x20] = {0},
@@ -92,12 +93,15 @@ static const uint8_t font_data[128][16] = {
     },
     /* ... more characters would be defined here ... */
 };
+#endif
 
-/* Simple fallback font for basic ASCII */
+/* Simple fallback font for basic ASCII - currently unused */
+#if 0
 static const uint8_t simple_font[95][8] = {
     /* Default pattern for undefined characters */
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 };
+#endif
 
 /* ============================================================================
  * Internal Helper Functions
@@ -120,7 +124,6 @@ static void draw_char_bitmap(int row, int col, char c,
     int y = row * FONT_HEIGHT;
     
     /* Get font data for character */
-    const uint8_t* char_data;
     if (c >= 32 && c < 127) {
         /* Use simple 8x8 font pattern */
         uint8_t pattern = 0;
@@ -155,9 +158,9 @@ static void draw_char_bitmap(int row, int col, char c,
 
 void vga_init(void) {
     /* Set VGA mode 0x12 via BIOS interrupt */
-    asm volatile(
-        "mov $0x4F02, %ax\n\t"      /* VESA function: set mode */
-        "mov $0x4112, %bx\n\t"      /* Mode 0x112 (640x480x16, linear) */
+    __asm__ volatile(
+        "mov $0x4F02, %%ax\n\t"      /* VESA function: set mode */
+        "mov $0x4112, %%bx\n\t"      /* Mode 0x112 (640x480x16, linear) */
         "int $0x10\n\t"
         :
         :
@@ -165,8 +168,8 @@ void vga_init(void) {
     );
     
     /* Fallback: Try standard mode 0x12 if VESA fails */
-    asm volatile(
-        "mov $0x0012, %ax\n\t"
+    __asm__ volatile(
+        "mov $0x0012, %%ax\n\t"
         "int $0x10\n\t"
         :
         :

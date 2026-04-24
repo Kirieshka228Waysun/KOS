@@ -75,7 +75,7 @@ struct gdt_entry {
 struct gdt_ptr {
     uint16_t limit;
     uint32_t base;
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 static struct gdt_entry gdt[GDT_ENTRIES];
 static struct gdt_ptr gdtp;
@@ -115,8 +115,10 @@ static void bootstrap(void) {
     /* Setup Global Descriptor Table */
     gdt_setup();
     
-    /* Load GDT */
-    load_gdt((uint32_t*)&gdtp);
+    /* Load GDT - copy to local variable first to avoid unaligned pointer cast */
+    gdtp.limit = sizeof(gdt) - 1;
+    gdtp.base = (uint32_t)(uintptr_t)gdt;
+    load_gdt((uint32_t*)(uintptr_t)&gdtp);
     
     /* Enable A20 line (allow access to memory above 1MB) */
     enable_a20();
@@ -125,14 +127,14 @@ static void bootstrap(void) {
     switch_to_protected();
     
     /* Setup segment registers after protected mode switch */
-    asm volatile(
-        "movl $0x10, %eax\n\t"
-        "movw %ax, %ds\n\t"
-        "movw %ax, %es\n\t"
-        "movw %ax, %fs\n\t"
-        "movw %ax, %gs\n\t"
-        "movw %ax, %ss\n\t"
-        "movl $0x90000, %esp\n\t"
+    __asm__ volatile(
+        "movl $0x10, %%eax\n\t"
+        "movw %%ax, %%ds\n\t"
+        "movw %%ax, %%es\n\t"
+        "movw %%ax, %%fs\n\t"
+        "movw %%ax, %%gs\n\t"
+        "movw %%ax, %%ss\n\t"
+        "movl $0x90000, %%esp\n\t"
         :
         :
         : "eax", "memory"
@@ -227,9 +229,6 @@ static void boot_menu(void) {
     const char* memtest_entry = "[M] Memory Test";
     const char* timeout_info = "Auto-boot in 10 seconds...";
     
-    int selected = BOOT_MODE_NORMAL;
-    int timeout = 100;  /* ~10 seconds at 100ms intervals */
-    
     /* Print title */
     vga_print_string_centered(BOOT_TITLE_Y, title, COLOR_WHITE, COLOR_BLUE);
     
@@ -262,7 +261,6 @@ static void boot_menu(void) {
  * ============================================================================
  */
 static boot_mode_t wait_for_selection(void) {
-    boot_mode_t selected = BOOT_MODE_NORMAL;
     uint8_t key;
     
     while (1) {
@@ -288,7 +286,7 @@ static boot_mode_t wait_for_selection(void) {
                     break;
                     
                 case SCAN_ENTER:
-                    return selected;
+                    return BOOT_MODE_NORMAL;
                     
                 default:
                     break;

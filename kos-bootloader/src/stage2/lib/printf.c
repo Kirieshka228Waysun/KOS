@@ -11,7 +11,9 @@
 
 /**
  * @brief Put a character into buffer with bounds checking
+ * Note: This function is kept for API compatibility but not used directly
  */
+__attribute__((unused))
 static void buf_putc(char c, void* arg) {
     char** buf_ptr = (char**)arg;
     size_t* count_ptr = (size_t*)*(buf_ptr + 1);  /* Hack to get count */
@@ -27,7 +29,7 @@ static void buf_putc(char c, void* arg) {
  * @brief Convert number to string in specified base
  */
 static int num_to_str(char* buf, size_t bufsize, unsigned long value, 
-                      int base, bool uppercase, bool sign, bool negative) {
+                      int base, bool uppercase) {
     char digits[] = "0123456789abcdef";
     char digits_upper[] = "0123456789ABCDEF";
     const char* d = uppercase ? digits_upper : digits;
@@ -46,11 +48,6 @@ static int num_to_str(char* buf, size_t bufsize, unsigned long value,
     while (value > 0 && len < 31) {
         temp[len++] = d[value % base];
         value /= base;
-    }
-    
-    /* Add sign if needed */
-    if (negative && len < 31) {
-        temp[len++] = '-';
     }
     
     /* Reverse into output buffer */
@@ -142,8 +139,13 @@ int vprintf_custom(putc_func_t putc_fn, void* arg,
                 }
                 
                 char buf[32];
-                int len = num_to_str(buf, sizeof(buf), abs_value, 10, 
-                                     false, true, negative);
+                int len = num_to_str(buf, sizeof(buf), abs_value, 10, false);
+                
+                /* Print sign first */
+                if (negative) {
+                    putc_fn('-', arg);
+                    count++;
+                }
                 
                 for (int i = 0; i < len; i++) {
                     putc_fn(buf[i], arg);
@@ -161,7 +163,7 @@ int vprintf_custom(putc_func_t putc_fn, void* arg,
                 }
                 
                 char buf[32];
-                int len = num_to_str(buf, sizeof(buf), value, 10, false, false, false);
+                int len = num_to_str(buf, sizeof(buf), value, 10, false);
                 
                 for (int i = 0; i < len; i++) {
                     putc_fn(buf[i], arg);
@@ -180,8 +182,7 @@ int vprintf_custom(putc_func_t putc_fn, void* arg,
                 }
                 
                 char buf[32];
-                int len = num_to_str(buf, sizeof(buf), value, 16, 
-                                     *p == 'X', false, false);
+                int len = num_to_str(buf, sizeof(buf), value, 16, *p == 'X');
                 
                 for (int i = 0; i < len; i++) {
                     putc_fn(buf[i], arg);
@@ -199,7 +200,7 @@ int vprintf_custom(putc_func_t putc_fn, void* arg,
                 count += 2;
                 
                 char buf[32];
-                int len = num_to_str(buf, sizeof(buf), value, 16, false, false, false);
+                int len = num_to_str(buf, sizeof(buf), value, 16, false);
                 
                 for (int i = 0; i < len; i++) {
                     putc_fn(buf[i], arg);

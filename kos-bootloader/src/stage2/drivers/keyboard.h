@@ -164,6 +164,13 @@ uint8_t keyboard_read_data(void);
 char scancode_to_ascii(uint8_t scancode, bool shift);
 
 /**
+ * @brief Get ASCII character from scancode using internal table
+ * @param scan Scancode index
+ * @return ASCII character or 0
+ */
+char keyboard_scan_to_char(uint8_t scan);
+
+/**
  * @brief Get current modifier key state
  * @return Bitmask of modifier states
  */

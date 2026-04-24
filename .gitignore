@@ -1,1 +1,43 @@
-Nothing to output - the file changes consist only of source/config files (.asm, .mk) without any build artifacts, dependencies, or temporary files that need to be ignored.
+```
+# Compiled and build artifacts
+*.o
+*.obj
+*.out
+*.bin
+*.elf
+*.hex
+*.map
+build/
+dist/
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# OS
+.DS_Store
+Thumbs.db
+```

@@ -42,7 +42,9 @@ static bool read_sector(uint32_t lba, void* buffer) {
 
 /**
  * @brief Read multiple sectors
+ * Note: Currently unused but kept for future ISO9660 implementation
  */
+__attribute__((unused))
 static bool read_sectors(uint32_t lba, uint32_t count, void* buffer) {
     for (uint32_t i = 0; i < count; i++) {
         if (!read_sector(lba + i, (uint8_t*)buffer + (i * ISO_SECTOR_SIZE))) {
