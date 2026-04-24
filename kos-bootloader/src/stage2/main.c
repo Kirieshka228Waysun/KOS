@@ -115,10 +115,10 @@ static void bootstrap(void) {
     /* Setup Global Descriptor Table */
     gdt_setup();
     
-    /* Load GDT - use memcpy to avoid unaligned pointer cast */
+    /* Load GDT - copy to local variable first to avoid unaligned pointer cast */
     gdtp.limit = sizeof(gdt) - 1;
-    gdtp.base = (uint32_t)gdt;
-    load_gdt((uint32_t*)&gdtp);
+    gdtp.base = (uint32_t)(uintptr_t)gdt;
+    load_gdt((uint32_t*)(uintptr_t)&gdtp);
     
     /* Enable A20 line (allow access to memory above 1MB) */
     enable_a20();
@@ -261,7 +261,6 @@ static void boot_menu(void) {
  * ============================================================================
  */
 static boot_mode_t wait_for_selection(void) {
-    boot_mode_t selected = BOOT_MODE_NORMAL;
     uint8_t key;
     
     while (1) {
@@ -287,7 +286,7 @@ static boot_mode_t wait_for_selection(void) {
                     break;
                     
                 case SCAN_ENTER:
-                    return selected;
+                    return BOOT_MODE_NORMAL;
                     
                 default:
                     break;

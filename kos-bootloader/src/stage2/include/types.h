@@ -28,6 +28,10 @@ typedef signed int          int32_t;
 typedef unsigned long long  uint64_t;
 typedef signed long long    int64_t;
 
+/* Pointer-sized integer types */
+typedef unsigned int        uintptr_t;
+typedef signed int          intptr_t;
+
 /* Size type */
 typedef uint32_t            size_t;
 typedef int32_t             ssize_t;
@@ -39,13 +43,10 @@ typedef uint32_t            virt_addr_t;
 /* Volatile qualifier for memory-mapped I/O */
 #define volatile_register   volatile
 
-/* Inline assembly helper */
-#define asm                 __asm__
-
-/* Memory barriers */
-#define memory_barrier()    asm volatile("" ::: "memory")
-#define read_barrier()      asm volatile("" ::: "memory")
-#define write_barrier()     asm volatile("" : : : "memory")
+/* Memory barriers - use __asm__ directly to avoid macro issues */
+#define memory_barrier()    __asm__ volatile("" ::: "memory")
+#define read_barrier()      __asm__ volatile("" ::: "memory")
+#define write_barrier()     __asm__ volatile("" : : : "memory")
 
 /* Container of macro - get struct from member pointer */
 #define container_of(ptr, type, member) \
