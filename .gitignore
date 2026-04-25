@@ -5,33 +5,18 @@
 build/
 binaries/
 
-# Dependencies
-node_modules/
-.venv/
-venv/
-__pycache__/
-*.egg-info/
-
-# Logs and temp files
-*.log
+# Temporary and cache files
 *.tmp
-*.swp
+*.log
 
-# Environment
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
 .env
 .env.local
 *.env.*
-
-# Editors
-.vscode/
-.idea/
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# OS
-.DS_Store
-Thumbs.db
 ```

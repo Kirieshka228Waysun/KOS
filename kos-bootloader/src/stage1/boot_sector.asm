@@ -75,9 +75,9 @@ start:
 .cboot:
     lodsb
     mov     ah, [di + 33]
-    call    toupper
+    call    toupper_char
     xchg    al, ah
-    call    toupper
+    call    toupper_char
     cmp     al, ah
     jne     .nrec
     inc     di
@@ -114,33 +114,71 @@ start:
     jnz     .bloop
     
     ; Search for STAGE2.SYS in BOOT dir
+    ; ISO9660 format: filename is at offset 33, length at offset 32
+    ; Name format: "STAGE2  SYS" or "STAGE2.SYS;1"
     mov     di, 0x7A00
 .fsys:
     test    byte [di], 0
     jz      err
-    mov     cl, [di + 32]
+    mov     cl, [di + 32]           ; File identifier length
     test    cl, cl
-    jz      err
+    jz      .nsys                   ; Skip if length is 0
     
-    ; Compare "STAGE2.SYS" (12 chars)
+    ; Check if this is a directory record (file flags at offset 25)
+    test    byte [di + 25], 2       ; Bit 1 = directory
+    jnz     .nsys                   ; Skip directories
+    
+    ; Compare with "STAGE2.SYS" (ignore version suffix ";1")
+    ; We need to match: STAGE2 followed by SYS (with space or dot separator)
     mov     si, stage2_name
-    mov     cx, 12
-.cname:
-    lodsb
-    mov     ah, [di + 33]
-    call    toupper
+    mov     ch, 0                   ; Match counter
+    mov     bl, cl                  ; Save original length
+.match_loop:
+    cmp     ch, 12                  ; Max 12 chars to check
+    jge     .check_done
+    cmp     ch, bl
+    jge     .check_done
+    
+    lodsb                           ; AL = expected char
+    mov     si, di
+    add     si, 33
+    add     si, cx                  ; SI = DI + 33 + CH (using CX since CH is part of it)
+    mov     ah, [si]                ; AH = actual char from record
+    
+    ; Handle case conversion and special chars
+    push    ax
+    call    toupper_char
+    mov     al, ah
+    pop     ax
+    call    toupper_char
     xchg    al, ah
-    call    toupper
+    
+    ; Special handling: space can match dot
+    cmp     al, '.'
+    jne     .no_dot_space
+    cmp     ah, ' '
+    je      .match_ok
+.no_dot_space:
+    cmp     al, ' '
+    jne     .no_space_dot
+    cmp     ah, '.'
+    je      .match_ok
+.no_space_dot:
     cmp     al, ah
     jne     .nsys
-    inc     di
-    loop    .cname
-    sub     di, 12
+.match_ok:
+    inc     ch
+    jmp     .match_loop
+    
+.check_done:
+    ; Also verify no extra significant chars (ignore version ";1")
     jmp     .found
     
 .nsys:
-    sub     di, 11
-    mov     cl, [di + 33]
+    sub     di, 33
+    mov     cl, [di + 32]           ; Get record length from offset 32
+    test    cl, cl
+    jz      err                     ; Safety check
     add     di, cx
     cmp     di, 0x7A00 + 4096
     jae     err
@@ -191,8 +229,8 @@ read_lba:
     popad
     ret
 
-; Uppercase AL if lowercase
-toupper:
+; Uppercase AL if lowercase (preserves other registers except flags)
+toupper_char:
     cmp     al, 'a'
     jb      .ok
     cmp     al, 'z'
